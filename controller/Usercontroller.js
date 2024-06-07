@@ -19,57 +19,62 @@ const join = (req, res) => {
     let values = [email, hashPassword, salt];
     conn.query(sql, values,
         (err, results) => {
+            if (err) {
+                console.log(err);
+                return res.status(StatusCodes.BAD_REQUEST).end();
+            }
+
+            if (results.affectedRows) {
+                return res.status(StatusCodes.CREATED).json(results);
+            } else {
+                return res.status(StatusCodes.BAD_REQUEST).end();
+            }
+            
+        })
+};
+    
+// 로그인
+const login = (req, res) => {
+    const { email, password } = req.body;
+    
+    let sql = 'SELECT * FROM users WHERE email = ?';
+    conn.query(sql, email,
+        (err, results) => {
             if(err) {
                 console.log(err);
                 return res.status(StatusCodes.BAD_REQUEST).end();
             }
             
-            return res.status(StatusCodes.CREATED).json(results);
-        })
-    }
+            const loginUser = results[0];
+
+            // 이메일 & 비밀번호 (암호화 전) -> salt값 꺼내서 비밀번호 암호화 -> 디비 비밀번호 비교
+            // salt값 꺼내서 날 것으로 들어온 비밀번호를 암호화
+            const hashPassword = crypto.pbkdf2Sync(password, loginUser.salt, 10000, 10, 'sha512').toString('base64');
+
+            // 디비 비밀번호랑 비교
+            if(loginUser && loginUser.password == hashPassword) {
+            // 토큰 발행
+            const token = jwt.sign({
+                id : loginUser.id,
+                email : loginUser.email
+            }, process.env.PRIVATE_KEY, {
+                expiresIn : '5M',
+                issuer : "sunjin"
+            });
+
+            // 토큰 쿠키에 담기
+            res.cookie("token", token, {
+                httpOnly : true
+            });
+            console.log(token);
+
+            return res.status(StatusCodes.OK).json(results);
+
+        } else {
+            return res.status(StatusCodes.UNAUTHORIZED).end();   // 401 : 비인증상태
+        }
     
-    // 로그인
-    const login = (req, res) => {
-        const { email, password } = req.body;
-        
-        let sql = 'SELECT * FROM users WHERE email = ?';
-        conn.query(sql, email,
-            (err, results) => {
-                if(err) {
-                    console.log(err);
-                    return res.status(StatusCodes.BAD_REQUEST).end();
-                }
-                
-                const loginUser = results[0];
-
-                // 이메일 & 비밀번호 (암호화 전) -> salt값 꺼내서 비밀번호 암호화 -> 디비 비밀번호 비교
-                // salt값 꺼내서 날 것으로 들어온 비밀번호를 암호화
-                const hashPassword = crypto.pbkdf2Sync(password, loginUser.salt, 10000, 10, 'sha512').toString('base64');
-
-                // 디비 비밀번호랑 비교
-                if(loginUser && loginUser.password == hashPassword) {
-                // 토큰 발행
-                const token = jwt.sign({
-                    id : loginUser.id,
-                    email : loginUser.email
-                }, process.env.PRIVATE_KEY, {
-                    expiresIn : '5M',
-                    issuer : "sunjin"
-                });
-
-                // 토큰 쿠키에 담기
-                res.cookie("token", token, {
-                    httpOnly : true
-                });
-                console.log(token);
-
-                return res.status(StatusCodes.OK).json(results);
-
-            } else {
-                return res.status(StatusCodes.UNAUTHORIZED).end();   // 401 : 비인증상태
-            }
-        
-        })
+    })
 };
 
 // 비밀번호 초기화 요청
