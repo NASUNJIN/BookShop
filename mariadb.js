@@ -1,5 +1,5 @@
 // mysql 모듈 소혼
-const mariadb = require('mysql2');
+const mariadb = require('mysql2/promise');
 
 // DB와 연결 통로 생성
 const connection = mariadb.createConnection({
@@ -9,5 +9,6 @@ const connection = mariadb.createConnection({
     database : 'BookShop',
     dateStrings : true
 });
+
 
 module.exports = connection;
