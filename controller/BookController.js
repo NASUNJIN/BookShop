@@ -39,6 +39,11 @@ const allBooks = (req, res) => {
             
             // results 값이 있을 경우
             if (results.length) {
+                // key 값 snake => camel로 바꾸기
+                results.map(function(result) {
+                    result.pubDate = result.pub_date;
+                    delete result.pub_date;
+                });
                 allBooksRes.books = results;
             } else {
                 return res.status(StatusCodes.NOT_FOUND).end();
