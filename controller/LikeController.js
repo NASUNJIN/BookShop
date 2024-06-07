@@ -1,14 +1,13 @@
+const ensureAuthorization = require('../auth'); // 인증모듈
 const jwt = require('jsonwebtoken');
 const conn = require('../mariadb');
 const { StatusCodes } = require('http-status-codes');
-const dotenv = require('dotenv');
-dotenv.config();
 
 // 좋아요 추가
 const addLike = (req, res) => {
     const book_id = req.params.id;
 
-    let authorization = ensureAuthorization(req);
+    let authorization = ensureAuthorization(req, res);
 
     if (authorization instanceof jwt.TokenExpiredError) {
         return res.status(StatusCodes.UNAUTHORIZED).json({
@@ -38,7 +37,7 @@ const addLike = (req, res) => {
 const removeLike = (req, res) => {
     const book_id = req.params.id;
 
-    let authorization = ensureAuthorization(req);
+    let authorization = ensureAuthorization(req, res);
 
     if (authorization instanceof jwt.TokenExpiredError) {
         return res.status(StatusCodes.UNAUTHORIZED).json({
@@ -63,23 +62,6 @@ const removeLike = (req, res) => {
     }
 
 };
-
-function ensureAuthorization(req, res) {
-    try {
-        let receivedJwt = req.headers["authorization"];
-        console.log("receivedJwt : ", receivedJwt);
-    
-        let decodedJwt = jwt.verify(receivedJwt, process.env.PRIVATE_KEY);
-        console.log("decodedJwt : ", decodedJwt);
-    
-        return decodedJwt;
-    } catch (err) {
-        console.log(err.name);
-        console.log(err.message);
-
-        return err;
-    }
-}
 
 module.exports = {
     addLike,
