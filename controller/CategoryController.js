@@ -3,7 +3,7 @@ const { StatusCodes } = require('http-status-codes');
 
 const allCategory = (req, res) => {
 
-    // 카테고라 전체 목록 리스트
+    // 카테고리 전체 목록 리스트
     let sql = "SELECT * FROM category";
     conn.query(sql, (err, results) => {
         if(err) {
